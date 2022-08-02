@@ -51,6 +51,8 @@ fn setup(
             mesh: meshes.add(Mesh::from(shape::Plane { size: 200.0 })),
             material: materials.add(StandardMaterial {
                 base_color: Color::rgb(0.5, 0.5, 0.5),
+                metallic: 0.5,
+                perceptual_roughness: 0.5,
                 ..Default::default()
             }),
             ..default()
@@ -62,7 +64,7 @@ fn setup(
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
             material: materials.add(StandardMaterial {
-                base_color: Color::rgb(0.5, 0.5, 0.5),
+                base_color: Color::rgb(1.5, 0.5, 0.5),
                 ..Default::default()
             }),
             ..default()
@@ -75,7 +77,7 @@ fn setup(
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
             material: materials.add(StandardMaterial {
-                base_color: Color::rgb(0.5, 0.5, 0.5),
+                base_color: Color::rgb(0.5, 1.5, 0.5),
                 ..Default::default()
             }),
             ..default()
@@ -88,7 +90,7 @@ fn setup(
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
             material: materials.add(StandardMaterial {
-                base_color: Color::rgb(0.5, 0.5, 0.5),
+                base_color: Color::rgb(0.5, 0.5, 1.5),
                 ..Default::default()
             }),
             ..default()
@@ -103,7 +105,7 @@ fn setup(
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
             material: materials.add(StandardMaterial {
-                base_color: Color::rgb(0.5, 0.5, 0.5),
+                base_color: Color::rgb(1.5, 0.5, 1.5),
                 ..Default::default()
             }),
             ..default()
@@ -114,9 +116,9 @@ fn setup(
 
     // light
     commands.spawn_bundle(PointLightBundle {
-        transform: Transform::from_xyz(3.0, 8.0, 5.0),
+        transform: Transform::from_xyz(3.0, 2.0, 5.0),
         point_light: PointLight {
-            intensity: 1600.0, // lumens - roughly a 100W non-halogen incandescent bulb
+            intensity: 4600.0, // lumens - roughly a 100W non-halogen incandescent bulb
             color: Color::WHITE,
             shadows_enabled: true,
             ..default()
@@ -173,7 +175,6 @@ fn camera_controller(
 }
 
 #[derive(Component)]
-
 struct PlayerController {
     pub enabled: bool,
     pub key_forward: KeyCode,
