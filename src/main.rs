@@ -11,6 +11,7 @@ fn main() {
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
         .add_system(camera_controller)
+        .add_system(player_controller)
         .add_system(grab_mouse)
         .run();
 }
@@ -28,11 +29,13 @@ fn setup(
                 .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         })
-        .insert(CameraController::default())
-        .insert_bundle(TransformBundle::from(
-            Transform::from_xyz(5.0, 3.0, 5.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
-        ))
+        .insert(CameraController::default());
+
+    // player
+    commands
+        .spawn_bundle(TransformBundle::from(Transform::from_xyz(5.0, 3.0, 5.0)))
         .insert(Collider::cuboid(0.5, 0.5, 0.5))
+        .insert(PlayerController::default())
         .insert(RigidBody::Dynamic);
 
     // plane
@@ -119,6 +122,61 @@ fn setup(
 struct CameraController {
     pub enabled: bool,
     pub sensitivity: f32,
+    pub pitch: f32,
+    pub yaw: f32,
+    
+}
+
+impl Default for CameraController {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            sensitivity: 0.5,
+            pitch: 0.0,
+            yaw: 0.0,
+        }
+    }
+}
+
+fn camera_controller(
+    time: Res<Time>,
+    mut mouse_events: EventReader<MouseMotion>,
+    mut query: Query<(&mut Transform, &mut CameraController), With<Camera>>,
+) {
+    let dt = time.delta_seconds();
+
+    // Handle mouse input
+    let mut mouse_delta = Vec2::ZERO;
+    for mouse_event in mouse_events.iter() {
+        mouse_delta += mouse_event.delta;
+    }
+
+    for (mut transform, mut options) in &mut query {
+        if !options.enabled {
+            continue;
+        }
+
+        if mouse_delta != Vec2::ZERO {
+            // Apply look update
+            let (pitch, yaw) = (
+                (options.pitch - mouse_delta.y * 0.5 * options.sensitivity * dt).clamp(
+                    -0.99 * std::f32::consts::FRAC_PI_2,
+                    0.99 * std::f32::consts::FRAC_PI_2,
+                ),
+                options.yaw - mouse_delta.x * options.sensitivity * dt,
+            );
+            transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, yaw, pitch);
+            options.pitch = pitch;
+            options.yaw = yaw;
+        }
+    }
+}
+
+
+#[derive(Component)]
+
+struct PlayerController {
+    pub enabled: bool,
     pub key_forward: KeyCode,
     pub key_back: KeyCode,
     pub key_left: KeyCode,
@@ -129,16 +187,13 @@ struct CameraController {
     pub walk_speed: f32,
     pub run_speed: f32,
     pub friction: f32,
-    pub pitch: f32,
-    pub yaw: f32,
     pub velocity: Vec3,
 }
 
-impl Default for CameraController {
+impl Default for PlayerController {
     fn default() -> Self {
         Self {
             enabled: true,
-            sensitivity: 0.5,
             key_forward: KeyCode::W,
             key_back: KeyCode::S,
             key_left: KeyCode::A,
@@ -149,26 +204,17 @@ impl Default for CameraController {
             walk_speed: 10.0,
             run_speed: 30.0,
             friction: 0.5,
-            pitch: 0.0,
-            yaw: 0.0,
             velocity: Vec3::ZERO,
         }
     }
 }
 
-fn camera_controller(
+fn player_controller(
     time: Res<Time>,
-    mut mouse_events: EventReader<MouseMotion>,
     key_input: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Transform, &mut CameraController), With<Camera>>,
+    mut query: Query<(&mut Transform, &mut PlayerController), Without<Camera>>,
 ) {
     let dt = time.delta_seconds();
-
-    // Handle mouse input
-    let mut mouse_delta = Vec2::ZERO;
-    for mouse_event in mouse_events.iter() {
-        mouse_delta += mouse_event.delta;
-    }
 
     for (mut transform, mut options) in &mut query {
         if !options.enabled {
@@ -216,20 +262,6 @@ fn camera_controller(
         transform.translation += options.velocity.x * dt * right
             + options.velocity.y * dt * Vec3::Y
             + options.velocity.z * dt * forward;
-
-        if mouse_delta != Vec2::ZERO {
-            // Apply look update
-            let (pitch, yaw) = (
-                (options.pitch - mouse_delta.y * 0.5 * options.sensitivity * dt).clamp(
-                    -0.99 * std::f32::consts::FRAC_PI_2,
-                    0.99 * std::f32::consts::FRAC_PI_2,
-                ),
-                options.yaw - mouse_delta.x * options.sensitivity * dt,
-            );
-            transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, yaw, pitch);
-            options.pitch = pitch;
-            options.yaw = yaw;
-        }
     }
 }
 
