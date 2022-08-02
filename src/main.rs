@@ -1,6 +1,6 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::{
-    prelude::{Collider, NoUserData, RapierPhysicsPlugin, RigidBody},
+    prelude::{Collider, LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody},
     render::RapierDebugRenderPlugin,
 };
 
@@ -34,7 +34,12 @@ fn setup(
     // player
     commands
         .spawn_bundle(TransformBundle::from(Transform::from_xyz(5.0, 3.0, 5.0)))
-        .insert(Collider::cuboid(0.5, 0.5, 0.5))
+        .insert(
+            LockedAxes::ROTATION_LOCKED_X
+                | LockedAxes::ROTATION_LOCKED_Y 
+                | LockedAxes::ROTATION_LOCKED_Z,
+        )
+        .insert(Collider::capsule_y(0.5, 0.5))
         .insert(PlayerController::default())
         .insert(RigidBody::Dynamic);
 
@@ -124,7 +129,6 @@ struct CameraController {
     pub sensitivity: f32,
     pub pitch: f32,
     pub yaw: f32,
-    
 }
 
 impl Default for CameraController {
@@ -171,7 +175,6 @@ fn camera_controller(
         }
     }
 }
-
 
 #[derive(Component)]
 
