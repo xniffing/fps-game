@@ -8,3 +8,11 @@ edition = "2021"
 [dependencies]
 bevy = "0.8.0"
 bevy_rapier3d = "0.16.0"
+bevy_obj = "0.8.0"
+bevy-inspector-egui = { src = "https://github.com/jakobhellermann/bevy-inspector-egui.git"}
+
+[profile.dev.package.bevy_rapier3d]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1

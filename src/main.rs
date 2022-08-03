@@ -1,14 +1,23 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy_inspector_egui::{Inspectable, InspectorPlugin, WorldInspectorPlugin};
+use bevy_obj::*;
 use bevy_rapier3d::{
     prelude::{Collider, LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody},
-    // render::RapierDebugRenderPlugin,
+    render::RapierDebugRenderPlugin,
 };
 
 fn main() {
     App::new()
+        .insert_resource(AmbientLight {
+            color: Color::WHITE,
+            brightness: 1.0 / 5.0f32,
+        })
         .add_plugins(DefaultPlugins)
+        .add_plugin(InspectorPlugin::<CameraController>::new())
+        .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(ObjPlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        // .add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
         .add_system(camera_controller)
         .add_system(player_controller)
@@ -19,10 +28,49 @@ fn main() {
 /// set up a simple 3D scene
 fn setup(
     mut commands: Commands,
+    // asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // camera
+    commands
+        .spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Box {
+                min_x: -5.0,
+                max_x: 5.0,
+                min_y: -0.1,
+                max_y: 0.1,
+                min_z: -5.0,
+                max_z: 5.0,
+            })),
+            material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
+            transform: Transform::from_xyz(0., 2., -5.),
+            ..Default::default()
+        })
+        .insert(RigidBody::Fixed)
+        .insert(Collider::cuboid(5.0, 0.1, 5.0));
+
+    commands
+        .spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Box {
+                min_x: -5.0,
+                max_x: 5.0,
+                min_y: -0.1,
+                max_y: 0.1,
+                min_z: -5.0,
+                max_z: 5.0,
+            })),
+            material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
+            transform: Transform::from_xyz(5., 2., -10.),
+            ..Default::default()
+        })
+        .insert(RigidBody::Fixed)
+        .insert(Collider::cuboid(5.0, 0.1, 5.0))
+        .insert_bundle(TransformBundle::from(Transform::from_rotation(Quat {
+            x: (0.0),
+            y: (0.0),
+            z: (105.0),
+            w: (45.0),
+        })));
 
     // player
     commands
@@ -57,6 +105,7 @@ fn setup(
             }),
             ..default()
         })
+        .insert(RigidBody::Fixed)
         .insert(Collider::cuboid(200.0, 0.0, 200.0));
 
     // cubes
@@ -127,7 +176,9 @@ fn setup(
     });
 }
 
-#[derive(Component)]
+#[derive(Inspectable)]
+#[derive(Component, Debug)]
+
 struct CameraController {
     pub enabled: bool,
     pub sensitivity: f32,
@@ -151,30 +202,32 @@ fn camera_controller(
 ) {
     let dt = time.delta_seconds();
 
-    // Handle mouse input
-    let mut mouse_delta = Vec2::ZERO;
-    for mouse_event in mouse_events.iter() {
-        mouse_delta += mouse_event.delta;
-    }
-
-    for (mut transform, mut options) in &mut query {
-        if !options.enabled {
-            continue;
+        // Handle mouse input
+        let mut mouse_delta = Vec2::ZERO;
+        for mouse_event in mouse_events.iter() {
+            mouse_delta += mouse_event.delta;
         }
 
-        if mouse_delta != Vec2::ZERO {
-            // Apply look update
-            let pitch = (options.pitch - mouse_delta.y * 0.5 * options.sensitivity * dt).clamp(
-                -0.99 * std::f32::consts::FRAC_PI_2,
-                0.99 * std::f32::consts::FRAC_PI_2,
-            );
-            transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, 0.0, pitch);
-            options.pitch = pitch;
+        for (mut transform, mut options) in &mut query {
+            if !options.enabled {
+                continue;
+            }
+
+            if mouse_delta != Vec2::ZERO {
+                // Apply look update
+                let pitch = (options.pitch - mouse_delta.y * 0.5 * options.sensitivity * dt).clamp(
+                    -0.99 * std::f32::consts::FRAC_PI_2,
+                    0.99 * std::f32::consts::FRAC_PI_2,
+                );
+                transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, 0.0, pitch);
+                options.pitch = pitch;
+            }
         }
-    }
+
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
+
 struct PlayerController {
     pub enabled: bool,
     pub key_forward: KeyCode,
