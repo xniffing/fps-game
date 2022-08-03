@@ -60,7 +60,7 @@ fn setup(
                 max_z: 5.0,
             })),
             material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
-            transform: Transform::from_xyz(5., 2., -10.),
+            transform: Transform::from_xyz(9.6, 0.34, -5.0),
             ..Default::default()
         })
         .insert(RigidBody::Fixed)
@@ -176,8 +176,7 @@ fn setup(
     });
 }
 
-#[derive(Inspectable)]
-#[derive(Component, Debug)]
+#[derive(Inspectable, Component, Debug)]
 
 struct CameraController {
     pub enabled: bool,
@@ -197,13 +196,16 @@ impl Default for CameraController {
 
 fn camera_controller(
     time: Res<Time>,
+    windows: ResMut<Windows>,
     mut mouse_events: EventReader<MouseMotion>,
     mut query: Query<(&mut Transform, &mut CameraController), With<Camera>>,
 ) {
     let dt = time.delta_seconds();
+    let window = windows.get_primary().unwrap();
 
-        // Handle mouse input
-        let mut mouse_delta = Vec2::ZERO;
+    // Handle mouse input
+    let mut mouse_delta = Vec2::ZERO;
+    if window.cursor_locked() == true {
         for mouse_event in mouse_events.iter() {
             mouse_delta += mouse_event.delta;
         }
@@ -223,7 +225,7 @@ fn camera_controller(
                 options.pitch = pitch;
             }
         }
-
+    }
 }
 
 #[derive(Component, Debug)]
@@ -270,9 +272,12 @@ fn player_controller(
     time: Res<Time>,
     mut mouse_events: EventReader<MouseMotion>,
     key_input: Res<Input<KeyCode>>,
+    windows: Res<Windows>,
     mut query: Query<(&mut Transform, &mut PlayerController), Without<Camera>>,
 ) {
     let dt = time.delta_seconds();
+
+    let window = windows.get_primary().unwrap();
 
     // Handle mouse input
     let mut mouse_delta = Vec2::ZERO;
@@ -306,13 +311,14 @@ fn player_controller(
             axis_input.y -= 1.0;
         }
 
-        if mouse_delta != Vec2::ZERO {
-            // Apply look update
-            let yaw = options.yaw - mouse_delta.x * options.sensitivity * dt;
-            transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, yaw, 0.0);
-            options.yaw = yaw;
+        if window.cursor_locked() == true {
+            if mouse_delta != Vec2::ZERO {
+                // Apply look update
+                let yaw = options.yaw - mouse_delta.x * options.sensitivity * dt;
+                transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, yaw, 0.0);
+                options.yaw = yaw;
+            }
         }
-
         // Apply movement update
         if axis_input != Vec3::ZERO {
             let max_speed = if key_input.pressed(options.key_run) {
@@ -344,7 +350,7 @@ fn grab_mouse(
     key: Res<Input<KeyCode>>,
 ) {
     let window = windows.get_primary_mut().unwrap();
-    if mouse.just_pressed(MouseButton::Left) {
+    if mouse.just_pressed(MouseButton::Right) {
         window.set_cursor_visibility(false);
         window.set_cursor_lock_mode(true);
     }
